@@ -1,0 +1,137 @@
+Dúvida de aluno
+
+Caro André, a pergunta era---como pode uma máquina executar o MDC
+definido pelo procedimento
+
+  def mdc(a, b):
+    if divides(b, a):
+      return b
+    return mdc(b, remainder(a, b))
+
+se a máquina precisa da definição do mdc pra computar o próprio
+procedimento mdc?
+
+Faça o seguinte experimento.  Usando C, defina uma função recursiva
+simples, como n!, e veja o assembly do procedimento.  Por exemplo,
+escreva
+
+  int f(int n) {
+    if (n == 0)
+      return 1;
+    return n * f(n - 1);
+  }
+
+e compile-o usando ``gcc -g -c f.c''.  Na linha de comando abaixo,
+observe que o prompt do meu shell é o símbolo %.  Então a ``figura
+abaixo'' ilustra eu digitando ``gcc -g -c -f.c'' e não há qualquer
+resposta do compilador---o que significa que a compilação procedeu sem
+problema.  (No news is good news.)
+
+--8<---------------cut here---------------start------------->8---
+%gcc -g -c f.c
+%
+--8<---------------cut here---------------end--------------->8---
+
+Em seguida---veja a próxima ``figura''---, executo um programa chamado
+``objdump'' e peço pelo disassembly do ``object code'' produzido pelo
+/gcc/.  A parte interessante do output do objdump é o trecho ``<f>''
+em que podemos ver o assembly do procedimento /f/.  Observe que o
+início do procedimento são várias instruções push, move, sub, cmpl,
+jne...  O /if/ do procedimento é essencialmente cmpl seguido de jne.
+(É uma comparação de inteiros seguida de um [j]ump-if-[n]ot-[e]qual.
+Se passarmos por essas instruções, então chegamos ao /else/.)  No
+/else/, temos /call 0 <f>/, que é a chamada recursiva.
+
+--8<---------------cut here---------------start------------->8---
+%objdump.exe -d f.o
+
+f.o:     file format pe-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 <f>:
+   0:	55                   	push   %rbp
+   1:	48 89 e5             	mov    %rsp,%rbp
+   4:	48 83 ec 20          	sub    $0x20,%rsp
+   8:	89 4d 10             	mov    %ecx,0x10(%rbp)
+   b:	83 7d 10 00          	cmpl   $0x0,0x10(%rbp)
+   f:	75 07                	jne    18 <f+0x18>
+  11:	b8 01 00 00 00       	mov    $0x1,%eax
+  16:	eb 11                	jmp    29 <f+0x29>
+  18:	8b 45 10             	mov    0x10(%rbp),%eax
+  1b:	83 e8 01             	sub    $0x1,%eax
+  1e:	89 c1                	mov    %eax,%ecx
+  20:	e8 db ff ff ff       	call   0 <f>
+  25:	0f af 45 10          	imul   0x10(%rbp),%eax
+  29:	48 83 c4 20          	add    $0x20,%rsp
+  2d:	5d                   	pop    %rbp
+  2e:	c3                   	ret    
+  2f:	90                   	nop
+--8<---------------cut here---------------end--------------->8---
+
+Então o próprio assembly não é diferente de Python.  Python está
+dizendo a mesma coisa: se passar pelo /if/, chame /mdc/.  Isso serve
+pra deixar claro que não há qualquer mágica que Python esteja fazendo
+que seu CPU já não saiba fazer ele próprio.
+
+Sua curiosidade agora deve estar no funcionamento da instrução /call/.
+O que faz essa instrução?  O que ela faz é essencialmente o que
+apontei no quadro.  Em assembly, chamar um procedimento /f/ significa
+pular pra uma certo ponto T do código em que /f/ está escrito.  Mas o
+que a máquina faz quando terminar de computar /f/?  Ela precisa voltar
+no ponto em que ela estava antes de invocar /f/---que é o ponto T.
+Então a instrução /call/ salva na pilha informações como essa---volte
+a este ponto quando terminar de computar o código do procedimento
+estou invocando agora.
+
+Então recursão é essencialmente (1) reservar uma área de memória pra
+servir como rascunho dos argumentos e da memória do procedimento; (2)
+pular pro início do procedimento recursivo; (3) computar as intruções
+do procedimento até encontrar uma chamada /call/ qualquer (que pode
+ser recursiva); (4) executar a instrução /call/, que é essencialmente
+marcar o ponto no código em que a máquina está e pular pro início do
+procedimento. 
+
+E quem retorna a máquina pro ponto T quando chegamos ao caso base do
+procedimento?  Isso é responsabilidade de outra instrução, que é a
+instrução /ret/.  A instrução /ret/ encontrará na pilha o ponto T, que
+foi salvo lá por /call/.  Então ela lê a informação e pede pra máquina
+voltar a T.
+
+(*) Compare também com Python
+
+Eis o assembly do procedimento 
+
+  def f(n):
+    if n == 0:
+      return 1
+    return n * f(n - 1)
+
+relativo à máquina virtual Python.  Observe na ``figura'' abaixo que
+temos uma comparação seguida de um jump-if-false---um jump pra linha
+12 if false, que é o /else/.  Lá no /else/, também temos uma instrução
+/call/ e, no fim, temos uma instrução /ret/.
+
+--8<---------------cut here---------------start------------->8---
+>>> import dis
+>>> dis.dis(f)
+ 31           0 LOAD_FAST                0 (n)
+              2 LOAD_CONST               1 (0)
+              4 COMPARE_OP               2 (==)
+              6 POP_JUMP_IF_FALSE        6 (to 12)
+
+ 32           8 LOAD_CONST               2 (1)
+             10 RETURN_VALUE
+
+ 33     >>   12 LOAD_FAST                0 (n)
+             14 LOAD_GLOBAL              0 (f)
+             16 LOAD_FAST                0 (n)
+             18 LOAD_CONST               2 (1)
+             20 BINARY_SUBTRACT
+             22 CALL_FUNCTION            1
+             24 BINARY_MULTIPLY
+             26 RETURN_VALUE
+--8<---------------cut here---------------end--------------->8---
+
+É o relatório.
