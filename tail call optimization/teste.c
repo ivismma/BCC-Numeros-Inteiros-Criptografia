@@ -10,7 +10,7 @@ typedef unsigned long long u_ll;
 void contar(u_ll n, u_ll i){
 	if(i > n) return;
 	else{
-		printf("%lld ", i);
+		printf("%llu ", i);
 		contar(n, i+1);
 	}
 }
