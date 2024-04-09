@@ -32,24 +32,39 @@ def inverso(e, phi_n):
     else:
         return x % phi_n
 
+
 def main():
 
+    print("Gerando p e q")
     p = randprime(2**1025, 2**1026)
     q = randprime(2**1025, 2**1026)
 
-    # n = p*q
+    print("Calculando n, Φ(n) e expoente...")
+    n = p*q
     phi_n = (p-1)*(q-1)
     e = 65537
 
     # Inverso multiplicativo modular (Alg. de Euclides):
+    print("Descobrindo a chave privada...")
     d = inverso(e, phi_n)
 
-    if (d*e)%phi_n == 1:
-        print("A chave privada está correta (Descriptografa).")
-    else:
-        print("A chave privada está incorreta.")
+    print("Obs: A mensagem (m) a ser encriptada deverá respeitar o seguinte intervalo: 0 <= m <= n")
+    m = int(input("\nDigite um número inteiro a ser encriptado: "))
+    print("Encriptando...")
+    c = (m**e) % n
+    print("Encriptado.")
+
+    ### DECRIPTAÇÃO:
+    
+    decrypt = pow(c,d,n)
+    # square-and-multiply
+
+    print("Desencriptando...\nMensagem:", decrypt)
 
     return 0
 
 
 main()
+
+# Observações: Nesse programa, para fins de estudos, criptografei e descriptografei uma
+# mensagem RSA, com valores *inteiros* (nome da disciplina -> Numeros Inteiros Criptografia)
