@@ -2,10 +2,12 @@
 
 // Tail Call Optimization
 // compilador gcc
-// Flag -O2 <-- Otimização nível 2
+// Flag -O2 <-- OtimizaÃ§Ã£o nÃ­vel 2
+
+typedef unsigned long long u_ll;
 
 // contar de 0 a 120000 recursivamente
-void contar(unsigned long long n, unsigned long long i){
+void contar(u_ll n, u_ll i){
 	if(i > n) return;
 	else{
 		printf("%lld ", i);
@@ -23,4 +25,4 @@ int main(void){
 }
 
 // recursao.exe    <-- compilado SEM -O2 (stack overflow)
-// recursaoTCO.exe <-- compilado COM -O2 (procedimento ITERATIVO na RECURSÃO)
+// recursaoTCO.exe <-- compilado COM -O2 (procedimento ITERATIVO na RECURSÃƒO)
