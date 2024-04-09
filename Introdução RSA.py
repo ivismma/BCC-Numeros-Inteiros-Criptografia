@@ -55,14 +55,13 @@ def main():
     print("Encriptado.")
 
     ### DECRIPTAÇÃO:
-    
-    decrypt = pow(c,d,n)
-    # square-and-multiply
 
-    print("Desencriptando...\nMensagem:", decrypt)
+    print("Desencriptando...")
+    decrypt = pow(c,d,n) # square-and-multiply
+
+    print("Mensagem:", decrypt)
 
     return 0
-
 
 main()
 
