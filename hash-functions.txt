@@ -1,0 +1,272 @@
+Ontem e hoje tocamos em vários assuntos tangenciais ao curso, mas que
+são de muita relevância---como programação, implementações e como as
+coisas funcionam na prática.  Com o objetivo de concretizar um pouco
+mais as coisas, seria legal a gente dar uma olhada em coisas como
+funções hash et cetera.  As criptográficas a gente já compreendeu.
+Vejamos então com mais calma uma aplicação de funções hash
+não-criptográficas.
+
+(*) Funções hash
+
+Vamos ver se a gente consegue compreender com mais clareza o que
+dissemos em sala hoje (com muita pressa).  (Perdão pela pressa.)
+Suponha que queiramos uma função hash (não criptográfica) pra
+implementar em C os dicionários de Python, ou seja, pra implementar
+tabelas hash.  Eis uma ilustração de uso de um dicionário em Python:
+
+>>> d = {"nome": "dan", "amiga": "ana"}
+>>> d["nome"]
+'dan'
+
+As chaves---os caracteres ``{'' e ``}''---são sintaxe Python pra
+representar um dicionário.  O nome ``dicionário'' faz sentido.  Num
+dicionário da língua Portuguesa, a gente localiza um palavra e lá
+encontramos seu significado.  Então /d/ é um dicionário que contém
+duas palavras: "nome" e "amiga".  O significado de "nome" é "daniel" e
+de "amiga", "ana".  Assim o nome ``dicionário'' é um nome bem
+escolhido.  ``Tabela hash'' também é um bom nome, exceto que o nome
+``hash'' diz respeito à implementação da estrutura de dados.  É como
+dar a um carro o nome de uma peça que usamos pra fazer o seu motor.  É
+como expor (ao usuário do carro) detalhes da engenharia interna da
+máquina.  (A promotoria poderia nos acusar de escolher maus nomes.
+Mas a gente se defende argumentando que todos os usuários dos nossos
+carros são mecânicos.  Programadores são engenheiros de software,
+engenheiros de máquinas abstratas.)
+
+Lá se foi um parágrafo inteiro só sobre nomes.
+
+  What's in a name?  A rose by any other name would smell as sweet.
+  -- ``Romeo and Juliet'', William Shakespeare, 1597.
+
+Façamos uma simulação em Python de como a gente implementaria em C
+esses dicionários.  Em C, a gente teria os arrays.  Os arrays de C são
+análogos às listas de Python.  A gente não pode usar as listas de
+Python com índices string, por exemplo.  Veja:
+
+>>> ls = ["daniel", "ana"]
+>>> ls[0]
+'daniel'
+>>> ls[1]
+>>> ls["hello"]
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: list indices must be integers or slices, not str
+
+List indices must be integers.
+
+Mas e se traduzíssemos essas strings pra inteiros?  Algo assim:
+
+>>> ls[f("hello")]
+"daniel"
+
+Assim temos efetivamente uma tabela hash.  Façamos isso.
+Implementemos essa função /f/ de forma que ela traduza strings pra
+número de alguma forma que sirva suficientemente a nosso treinamento.
+
+Vamos criar uma lista de tamanho finito.  Por exemplo, com 8 células.
+Cada célula começa vazia, o que podemos fazer com o valor de Python
+chamado /None/.  None é /análogo/ ao NULL de C.
+
+>>> ls = [None] * 8
+>>> ls
+[None, None, None, None, None, None, None, None]
+
+Aí estão nossas oito células.  Nossa função /f/ precisa produzir
+números inteiros de 0 a 7.  Seja qual for nossa estratégia pra função
+hash, a gente reduz o número final módulo 8 e isso resolve.
+
+Que estratégia devemos usar?  Olha, aí entra uma área que a gente pode
+chamar de ``projeto de funções hash'', uma área que estuda coisas nada
+óbvias.  Tomemos algo bem simples como pegar o valor ASCII de cada
+caractere na string e somar cada um deles reduzindo a soma módulo 8 ao
+fim.  Como pegamos o valor ASCII de um caractere?  Com ord():
+
+>>> ord("a")
+97
+>>> ord("b")
+98
+>>> ord("0")
+48
+>>> ord("1")
+49
+
+--8<---------------cut here---------------start------------->8---
+Falei hoje que Python não possui caracteres.
+
+>>> ord("as")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: ord() expected a character, but string of length 2 found
+
+A representação de caracteres em Python é feita com strings de tamanho
+1.  Os caracteres de Python não usam sintaxe distinta como C faz.
+Assim, não há caracteres---eles são strings (de tamanho um).
+
+>>> ord("~")
+126
+>>> ord("*")
+42
+
+Okay.  Já sabemos quem é a tabela ASCII em Python.  É ord().  (Uma
+função é sempre uma tabela.  Uma tabela não é sempre uma função.
+Verdadeiro ou falso?)
+--8<---------------cut here---------------end--------------->8---
+
+Agora podemos somar todos os valores ASCII de uma string.  A string
+"abc" produz os valores 97, 98, 99.  Somados e reduzidos módulo 8,
+obtemos 6.
+
+def remainder(a, b):
+  return a % b
+
+>>> remainder(98 + 97 + 99, 8)
+6
+
+Eis, pois, nossa primeira função hash:
+
+def f(s, modulus = 8):
+  sum = 0
+  for c in s:
+    sum = sum + ord(c)
+  return remainder(sum, modulus)
+
+>>> f("abc")
+6
+>>> f("hello")
+4
+
+O Teorema do Algoritmo da Divisão nos garante que f(s) sempre
+produzirá um número inteiro r satisfazendo 0 <= r < 8.  Já podemos
+usar nossa tabela hash:
+
+>>> ls
+[None, None, None, None, None, None, None, None]
+
+>>> f("sobrenome")
+2
+
+>>> ls[f("sobrenome")] = "chicayban"
+>>> ls
+[None, None, 'chicayban', None, None, None, None, None]
+
+>>> f("amiga")
+7
+
+>>> ls[f("amiga")] = "ana"
+>>> ls
+[None, None, 'chicayban', None, None, None, None, 'ana']
+
+E é isso aí.  Aí está nossa primeira tabela hash.  Em língua
+portuguesa, podemos dizer ``tabela de espalhamento''.  A função hash
+espalha as strings pela tabela.  Digo---a função de espalhamento.
+Outros nomes em língua portuguesa são ``tabela de dispersão'' e
+``função de dispersão''.
+
+(*) É uma boa implementação?
+
+Vai depender da função hash.  Se a função hash distribuir bem as
+strings entre as células 0 e 6, então ela pelo menos passa nesse
+quesito.  (Ela também precisa ser rápida, afinal, enquanto ela consome
+a string, a gente fica esperando---sem obter o dado armazenado lá ou
+sem conseguir escrevê-lo.)  Essa função /f/ que escrevemos bem
+distribui as strings?  Não sei.  Não é uma pergunta muito fácil de
+responder.  De que strings estamos falando?  Existem infinitas delas.
+Que strings os usuários vão usar quando estiverem programando com
+nossas tabelas de espalhamento?  A gente não sabe.  Então como vamos
+analisar dados que não conhecemos?  É uma vida difícil essa dos
+estatísticos e outros analistas.
+
+Experimentemos uma estratégia qualquer.  Que tal strings aleatórias de
+tamanho 10?  Eis um procedimento pra produzi-las:
+
+def string(size = 10):
+  from random import randint
+  universe = "abcdefghijklmnopqrstuvwxyz"
+  ret = []
+  for _ in range(10):
+    ret.append(universe[randint(0, len(universe) - 1)])
+  return "".join(ret)
+
+Quer dar uma olhada em três strings aleatórias (de tamanho 10)?  Veja:
+
+>>> [string() for i in range(3)]
+['nmoenxgcne', 'ucmvgcfrvf', 'acdstdfzjc']
+
+Que hashes essas strings têm?  Vejamos:
+
+>>> f('nmoenxgcne')
+2
+>>> f('ucmvgcfrvf')
+1
+>>> f('acdstdfzjc')
+0
+
+Isso é algum mau sinal?  Não faço ideia.  Vamos construir um
+histograma da função.  (O que é um histograma?)  A gente roda /f/ umas
+100 vezes com essas strings aleatórias e vê como a distribuição fica.
+Como construir esse histograma?  Podemos usar uma lista com 8
+elementos em que cada célula armazena ``um contador''.  Quando /f/
+produz um certo índice, a gente incrementa o contador relativao índice
+produzido por /f/.  No fim a gente tem uma noção de como /f/ distribui
+essas strings aleatórias de tamanho 10.  É uma estatística.
+
+def histogram(how_many_times = 100, modulus = 8):
+  ls = [0] * modulus
+  for _ in range(how_many_times):
+    ls[f(string(), modulus)] += 1
+  return ls
+
+Prontos?  (Promptos?)
+
+>>> histogram()
+[14, 14, 9, 13, 10, 17, 9, 14]
+
+Que significa isso?  Catorze das 100 strings caíram na célula 0.  Nove
+delas caíram na célula 2.  Idealmente a gente teria 12.5 = 100/8
+hashes em cada posição.  Mas não parece mau, parece?  Talvez a ideia
+de usar a soma da string não seja uma ideia tão ruim /em termos de
+distribuição/.  Haveria uma estratégia mais interessante que somar os
+caracteres da string?  (Algo mais rápido, por exemplo?)  Haveria um
+outro módulo que funcione melhor que 8?  E se aumentássemos o tamanho
+da lista?  Em vez de 8 posições, e se fossêmos pra 31, 100 ou pra 101?
+Faz diferença?  Essas são perguntas que ocupam a cabeça dos
+projetistas de funções hash.  Você conhece algum deles?  Um nome é
+Donald E. Knuth.  Outro nome é Daniel J. Bernstein.  Dá uma olhada,
+por exemplo, em
+
+  https://github.com/dim13/djb2/blob/master/docs/hash.md
+
+Lá você encontra a função hash abaixo (escrita em C) com o seguinte
+comentário.  O comentário é sobre a misteriosa constante 33 que o
+Daniel Bernstein usou na função dele.  (Note também o misterioso 5381,
+que é o valor inicial.)  Números em código-fonte sem explicação óbvia
+são chamados de ``magic numbers''.  O comentário comenta que ninguém
+sabe por que o valor 33 funciona bem.  É a vida com /hash functions/.
+
+--8<---------------cut here---------------start------------->8---
+(*) djb2
+
+This algorithm (k=33) was first reported by dan bernstein many years
+ago in comp.lang.c. Another version of this algorithm (now favored by
+bernstein) uses xor: hash(i) = hash(i - 1) * 33 ^ str[i]; the magic of
+number 33 (why it works better than many other constants, prime or
+not) has never been adequately explained.
+
+unsigned long
+hash(unsigned char *str)
+{
+    unsigned long hash = 5381;
+    int c;
+
+    while (c = *str++)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    return hash;
+}
+--8<---------------cut here---------------end--------------->8---
+
+Homepage de Donald E. Knuth:
+https://www-cs-faculty.stanford.edu/~knuth/
+
+Homepage de Daniel J. Bernstein:
+https://cr.yp.to/
