@@ -44,7 +44,7 @@ def main():
     phi_n = (p-1)*(q-1)
     e = 65537
 
-    # Inverso multiplicativo modular (Alg. de Euclides):
+    # Inverso multiplicativo modular (Alg. de Euclides estendido):
     print("Descobrindo a chave privada...")
     d = inverso(e, phi_n)
 
