@@ -8,11 +8,11 @@
 
 # Para todo x pertencente a {qualquer conjunto}, e L e R sendo BSTs (!!!)
 
-def empty(L):
-    return L == []
-
 def Tree(L, x, R):
     return L,x,R
+
+def empty(L):
+    return L == []
 
 # Esquerda:
 def left(T):
@@ -24,16 +24,18 @@ def root(T):
 def right(T):
     return T[2]
 
-def sort(L):
-    if empty(L):
-        return L
-    return insertT(head(L), sort(tail(L)))
-# Inserção
+# Inserção na árvore
 def insertT(x, T):  # Indução estrutural
     if empty(T):
         return Tree([],x,[])
     else:
-        if x < sort(T):
+        if x < root(T):
             return Tree(insertT(x, left(T)), root(T), right(T))
         else:
             return Tree(left(T), root(T), insertT(x, right(T)))
+
+T = []
+T = insertT(6, T)
+T = insertT(9, T)
+T = insertT(3, T)
+print(T)
