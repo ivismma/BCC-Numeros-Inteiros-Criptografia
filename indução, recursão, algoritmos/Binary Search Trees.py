@@ -27,10 +27,10 @@ def right(T):
 def sort(L):
     if empty(L):
         return L
-    return insertT(head(L), sort(tail(L))
+    return insertT(head(L), sort(tail(L)))
 # Inserção
 def insertT(x, T):  # Indução estrutural
-    if empty(T)
+    if empty(T):
         return Tree([],x,[])
     else:
         if x < sort(T):
